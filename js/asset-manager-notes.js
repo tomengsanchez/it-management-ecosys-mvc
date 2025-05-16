@@ -90,7 +90,8 @@ jQuery(document).ready(function($) {
 
         // Don't save if note and attachments are empty
         if (noteContent === '' && attachedFileIds.length === 0) {
-            $messageDiv.removeClass('notice notice-success notice-error').addClass('notice notice-warning').html('<p>' + assetManagerNotes.noteEmptyMessage + '</p>').show();
+            // Display a message to the user
+            $messageDiv.removeClass('notice notice-success notice-error').addClass('notice notice-warning').html('<p><?php esc_html_e("Note content and attachments are empty. Please add a note or an attachment.", "asset-manager"); ?></p>').show();
             return;
         }
 
@@ -112,10 +113,18 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    // Add the new note HTML to the top of the notes list
-                    $('.asset-notes-list ul').prepend(response.data.note_html);
-                     // If the list was empty, remove the "No notes added yet" paragraph
-                    $('.asset-notes-list p:contains("No notes added yet.")').remove();
+                    var $notesListUl = $('.asset-notes-list ul');
+
+                    // If the UL doesn't exist (meaning it was the empty state)
+                    if ($notesListUl.length === 0) {
+                        // Remove the "No notes added yet" paragraph
+                        $('.asset-notes-list p:contains("No notes added yet.")').remove();
+                        // Create the UL and append it to the list container
+                        $notesListUl = $('<ul>').appendTo('.asset-notes-list');
+                    }
+
+                    // Prepend the new note HTML to the UL
+                    $notesListUl.prepend(response.data.note_html);
 
                     // Clear the textarea and attachment list
                     $noteTextarea.val('');
