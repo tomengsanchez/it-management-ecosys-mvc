@@ -17,15 +17,15 @@ class Asset_Manager_Meta_Fields {
      * @var array
      */
     private $fields = [
-        'asset_tag', 
-        'model', 
-        'serial_number', 
-        'brand', 
+        'asset_tag',
+        'model',
+        'serial_number',
+        'brand',
         'supplier',
-        'date_purchased', 
-        'issued_to', 
-        'status', 
-        'location', 
+        'date_purchased',
+        'issued_to',
+        'status',
+        'location',
         'description'
     ];
 
@@ -35,12 +35,12 @@ class Asset_Manager_Meta_Fields {
      * @var array
      */
     private $status_options = [
-        'Unassigned', 
-        'Assigned', 
-        'Returned', 
-        'For Repair', 
-        'Repairing', 
-        'Archived', 
+        'Unassigned',
+        'Assigned',
+        'Returned',
+        'For Repair',
+        'Repairing',
+        'Archived',
         'Disposed'
     ];
 
@@ -51,6 +51,8 @@ class Asset_Manager_Meta_Fields {
         add_action('add_meta_boxes', [$this, 'add_asset_meta_boxes']);
         add_action('save_post_' . ASSET_MANAGER_POST_TYPE, [$this, 'save_asset_image_data']);
         add_action('save_post_' . ASSET_MANAGER_POST_TYPE, [$this, 'save_asset_details_data'], 10, 2);
+        // Add hook for saving notes data
+        add_action('save_post_' . ASSET_MANAGER_POST_TYPE, [$this, 'save_asset_notes_data'], 10, 2);
     }
 
     /**
@@ -89,9 +91,19 @@ class Asset_Manager_Meta_Fields {
                 'normal',
                 'default'
             );
+
+            // Asset Notes Meta Box
+            add_meta_box(
+                ASSET_MANAGER_META_PREFIX . 'notes', // Unique ID for notes
+                __('Asset Notes & Attachments', 'asset-manager'),
+                [$this, 'render_notes_meta_box_content'],
+                ASSET_MANAGER_POST_TYPE,
+                'normal',
+                'default'
+            );
         }
     }
-    
+
     /**
      * Returns the labels for the custom fields.
      *
@@ -185,7 +197,7 @@ class Asset_Manager_Meta_Fields {
      */
     public function render_asset_fields_meta_box_content($post) {
         wp_nonce_field(ASSET_MANAGER_META_PREFIX . 'save_details_nonce_action', ASSET_MANAGER_META_PREFIX . 'details_nonce');
-        
+
         $meta_values = [];
         $all_meta = get_post_meta($post->ID); // Get all meta for efficiency
         foreach ($this->fields as $field_key) {
@@ -276,6 +288,101 @@ class Asset_Manager_Meta_Fields {
     }
 
     /**
+     * Renders the content for the Asset Notes & Attachments meta box.
+     *
+     * @param WP_Post $post The current post object.
+     */
+    public function render_notes_meta_box_content($post) {
+        wp_nonce_field(ASSET_MANAGER_META_PREFIX . 'save_notes_nonce_action', ASSET_MANAGER_META_PREFIX . 'notes_nonce');
+
+        // Retrieve existing notes
+        $notes = get_post_meta($post->ID, ASSET_MANAGER_META_PREFIX . 'notes', true);
+        if (empty($notes) || !is_array($notes)) {
+            $notes = [];
+        }
+        // Reverse to show latest notes first
+        $notes = array_reverse($notes);
+        ?>
+        <div class="asset-notes">
+            <div class="asset-notes-list">
+                <?php if (empty($notes)) : ?>
+                    <p><?php esc_html_e('No notes added yet.', 'asset-manager'); ?></p>
+                <?php else : ?>
+                    <ul>
+                        <?php foreach ($notes as $note_entry) :
+                            $user_info = '';
+                            if (!empty($note_entry['user'])) {
+                                $user_data = get_userdata($note_entry['user']);
+                                if ($user_data) {
+                                    $user_info = ' (' . esc_html($user_data->display_name) . ')';
+                                }
+                            }
+                            $formatted_date = !empty($note_entry['date']) ? mysql2date(get_option('date_format') . ' @ ' . get_option('time_format'), $note_entry['date']) : __('Unknown Date', 'asset-manager');
+                            ?>
+                            <li>
+                                <strong><?php echo esc_html($formatted_date) . esc_html($user_info); ?>:</strong> <?php echo wp_kses_post(nl2br($note_entry['note'])); ?>
+                                <?php if (!empty($note_entry['attachments']) && is_array($note_entry['attachments'])) : ?>
+                                    <div class="asset-note-attachments">
+                                        <strong><?php esc_html_e('Attachments:', 'asset-manager'); ?></strong>
+                                        <ul>
+                                            <?php foreach ($note_entry['attachments'] as $attachment_id) :
+                                                $attachment_url = wp_get_attachment_url($attachment_id);
+                                                $attachment_title = get_the_title($attachment_id);
+                                                if ($attachment_url) : ?>
+                                                    <li><a href="<?php echo esc_url($attachment_url); ?>" target="_blank"><?php echo esc_html($attachment_title); ?></a></li>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+
+            <div class="asset-add-note">
+                <h3><?php esc_html_e('Add New Note', 'asset-manager'); ?></h3>
+                <textarea name="new_asset_note" id="new-asset-note" class="widefat" rows="4" placeholder="<?php esc_attr_e('Enter your note here...', 'asset-manager'); ?>"></textarea>
+
+                <div class="asset-note-attachments-upload">
+                    <button type="button" class="button" id="add-asset-note-attachment"><?php esc_html_e('Add Attachment(s)', 'asset-manager'); ?></button>
+                    <ul id="asset-note-attachment-list">
+                        </ul>
+                    <input type="hidden" name="new_asset_note_attachment_ids" id="new-asset-note-attachment-ids" value="">
+                </div>
+
+                <button type="button" class="button button-primary" id="save-asset-note"><?php esc_html_e('Add Note', 'asset-manager'); ?></button>
+                <span class="spinner" id="asset-note-spinner"></span>
+                <div id="asset-note-message" style="display:none; margin-top: 10px;"></div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Saves asset note data via AJAX.
+     * This function is called via admin-ajax.php.
+     */
+    public function save_asset_notes_data($post_id, $post) {
+        // This function is hooked to save_post, but the note saving will primarily happen via AJAX.
+        // We still need the nonce check here for the rare case someone submits the form directly
+        // with a note in the textarea (though the JS prevents this by using AJAX).
+        // The actual note saving logic is in the AJAX handler `handle_ajax_save_asset_note`.
+
+        // Basic checks for non-AJAX save attempt (unlikely but safe)
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+        if (!current_user_can('edit_post', $post_id)) return;
+        // Post type check is implicitly handled by save_post_ASSET_MANAGER_POST_TYPE hook.
+
+        // The AJAX handler will handle the actual saving of the note and attachments.
+        // This save_post hook remains primarily for the details and image data.
+        // We *could* add logic here to save a note if the 'new_asset_note' field is present
+        // during a standard post save, but the AJAX approach is better for user experience
+        // as it doesn't require a full page reload.
+    }
+
+    /**
      * Validates asset data from the form submission.
      *
      * @param array $form_data Raw data from $_POST.
@@ -346,7 +453,7 @@ class Asset_Manager_Meta_Fields {
         // Post type check is implicitly handled by save_post_ASSET_MANAGER_POST_TYPE hook.
 
         $errors = $this->_validate_asset_data($_POST);
-        
+
         if (!empty($errors)) {
             set_transient('asset_manager_errors_' . $post_id . '_' . get_current_user_id(), $errors, 45); // Store errors in a transient
             // To prevent WordPress from showing its own "Post updated." message when we have errors:
@@ -362,7 +469,7 @@ class Asset_Manager_Meta_Fields {
         $changes = [];
         $current_history = get_post_meta($post_id, ASSET_MANAGER_META_PREFIX . 'history', true) ?: [];
         if (!is_array($current_history)) $current_history = [];
-        
+
         $field_labels = $this->get_field_labels();
         $current_status_from_form = isset($_POST[ASSET_MANAGER_META_PREFIX . 'status']) ? sanitize_text_field($_POST[ASSET_MANAGER_META_PREFIX . 'status']) : null;
 
@@ -386,11 +493,11 @@ class Asset_Manager_Meta_Fields {
                 case 'status': // Already validated against $this->status_options
                     $new_value_sanitized = sanitize_text_field($new_value_raw);
                     break;
-                default: 
+                default:
                     $new_value_sanitized = sanitize_text_field($new_value_raw);
                     break;
             }
-            
+
             // Normalize for comparison (e.g. user ID 0 vs '')
             $old_value_comp = ($field_key === 'issued_to' && ($old_value === '0' || $old_value === 0)) ? '' : $old_value;
             $new_value_comp = ($field_key === 'issued_to' && ($new_value_sanitized === '0' || $new_value_sanitized === 0)) ? '' : $new_value_sanitized;
@@ -409,15 +516,15 @@ class Asset_Manager_Meta_Fields {
                         $old_user_data = get_userdata($old_value_comp);
                         $old_user_display = $old_user_data ? $old_user_data->display_name : sprintf(__('Unknown User (ID: %s)', 'asset-manager'), $old_value_comp);
                     }
-                    $new_user_display = __('Unassigned', 'asset-manager'); 
-                    if (!empty($new_value_comp)) { 
+                    $new_user_display = __('Unassigned', 'asset-manager');
+                    if (!empty($new_value_comp)) {
                         $new_user_data = get_userdata($new_value_comp);
                         $new_user_display = $new_user_data ? $new_user_data->display_name : sprintf(__('Unknown User (ID: %s)', 'asset-manager'), $new_value_comp);
                     }
                     if ($old_user_display !== $new_user_display) {
                          $changes[] = sprintf(esc_html__('%1$s changed from "%2$s" to "%3$s"', 'asset-manager'), esc_html($label), esc_html($old_user_display), esc_html($new_user_display));
                     }
-                } else { 
+                } else {
                     if ($old_display !== $new_display) {
                         $changes[] = sprintf(esc_html__('%1$s changed from "%2$s" to "%3$s"', 'asset-manager'), esc_html($label), esc_html($old_display), esc_html($new_display));
                     }
@@ -463,8 +570,8 @@ class Asset_Manager_Meta_Fields {
             // If `auto_increment_title` is robust, this block might become less critical or act as a final safety net.
             // For now, let's keep a simplified version of the original fallback.
             $asset_tag_val = get_post_meta($post_id, ASSET_MANAGER_META_PREFIX . 'asset_tag', true);
-            $new_fallback_title = !empty($asset_tag_val) 
-                                ? sprintf(__('Asset: %s', 'asset-manager'), $asset_tag_val) 
+            $new_fallback_title = !empty($asset_tag_val)
+                                ? sprintf(__('Asset: %s', 'asset-manager'), $asset_tag_val)
                                 : sprintf(__('Asset #%d', 'asset-manager'), $post_id);
 
             if ($new_fallback_title !== $current_post_obj->post_title) {

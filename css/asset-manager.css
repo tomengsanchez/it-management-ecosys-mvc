@@ -34,3 +34,119 @@
     font-weight: bold;
     margin-left: 2px;
 }
+
+/* --- Asset Notes Meta Box Styles --- */
+.asset-notes .asset-notes-list {
+    max-height: 300px; /* Limit height and add scroll */
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+.asset-notes .asset-notes-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.asset-notes .asset-notes-list li {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    margin-bottom: 10px;
+    word-wrap: break-word; /* Prevent long words from overflowing */
+}
+
+.asset-notes .asset-notes-list li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.asset-notes .asset-notes-list li strong {
+    display: block; /* Date and user on a new line */
+    margin-bottom: 5px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.asset-notes .asset-note-attachments {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ccc;
+}
+
+.asset-notes .asset-note-attachments strong {
+    display: inline; /* Keep "Attachments:" inline */
+    margin-bottom: 0;
+}
+
+.asset-notes .asset-note-attachments ul {
+    list-style: disc;
+    margin: 5px 0 0 20px;
+    padding: 0;
+}
+
+.asset-notes .asset-note-attachments li {
+    border: none;
+    padding: 2px 0;
+    margin-bottom: 2px;
+}
+
+.asset-notes .asset-add-note {
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.asset-notes .asset-add-note h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.asset-notes textarea#new-asset-note {
+    margin-bottom: 10px;
+}
+
+.asset-notes .asset-note-attachments-upload {
+    margin-bottom: 10px;
+}
+
+.asset-notes ul#asset-note-attachment-list {
+    list-style: none;
+    margin: 10px 0 0 0;
+    padding: 0;
+}
+
+.asset-notes ul#asset-note-attachment-list li {
+    background-color: #fff;
+    border: 1px solid #eee;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    display: flex; /* Align link and button */
+    justify-content: space-between;
+    align-items: center;
+}
+
+.asset-notes ul#asset-note-attachment-list li a {
+    margin-right: 10px; /* Space between link and button */
+}
+
+.asset-notes ul#asset-note-attachment-list li .delete-attachment {
+    cursor: pointer;
+    color: #a00; /* Red color for remove button */
+    border: none;
+    background: none;
+    padding: 0;
+    box-shadow: none;
+}
+
+.asset-notes .spinner {
+    margin: 0 10px;
+    vertical-align: middle;
+    visibility: hidden; /* Hidden by default */
+}
+
+#asset-note-message {
+    padding: 10px;
+}
