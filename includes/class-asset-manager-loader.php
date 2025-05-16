@@ -57,6 +57,11 @@ class Asset_Manager_Loader {
         $this->handlers['admin'] = new Asset_Manager_Admin();
         $this->handlers['callbacks'] = new Asset_Manager_Callbacks();
         $this->handlers['assets'] = new Asset_Manager_Assets();
+        // Add new handlers for Repair Requests
+        $this->handlers['repair_post_types'] = new Asset_Manager_Repair_Post_Types();
+        $this->handlers['repair_meta_fields'] = new Asset_Manager_Repair_Meta_Fields();
+        // Note: Repair Admin and Repair Assets handling might be integrated into existing classes
+        // or require new ones depending on complexity. For now, meta fields and post types are separate.
     }
 
     /**
@@ -72,7 +77,7 @@ class Asset_Manager_Loader {
                 $handler->register_hooks();
             }
         }
-        
+
         // Placeholder for shortcodes if they were to be implemented
         // add_action('init', [$this, 'register_shortcodes']);
     }
@@ -83,10 +88,16 @@ class Asset_Manager_Loader {
      * Flushes rewrite rules after post types and taxonomies are registered.
      */
     public static function activate() {
-        // Ensure post types and taxonomies are registered before flushing
+        // Ensure Asset post types and taxonomies are registered
         $post_types_handler = new Asset_Manager_Post_Types();
         $post_types_handler->register_asset_post_type();
         $post_types_handler->register_asset_taxonomy();
+
+        // Ensure Repair Request post types and taxonomies are registered
+        $repair_post_types_handler = new Asset_Manager_Repair_Post_Types();
+        $repair_post_types_handler->register_repair_request_post_type();
+        $repair_post_types_handler->register_repair_status_taxonomy();
+
         flush_rewrite_rules();
     }
 
@@ -98,7 +109,7 @@ class Asset_Manager_Loader {
     public static function deactivate() {
         // e.g., flush_rewrite_rules(); or clean up options
     }
-    
+
     /**
      * Placeholder for shortcode registration.
      */

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Asset Manager MVC VErsio
- * Description: Custom post type for managing assets with history tracking, custom fields, PDF export, and more.
- * Version: 1.9.1 // Updated version
+ * Description: Custom post type for managing assets and repair requests with history tracking, custom fields, PDF export, and more.
+ * Version: 1.10.0 // Updated version for new module
  * Author: Your Name
  * Text Domain: asset-manager
  * Domain Path: /languages
@@ -13,12 +13,17 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Define constants
-define('ASSET_MANAGER_VERSION', '1.9.1'); // Updated version
+define('ASSET_MANAGER_VERSION', '1.10.0'); // Updated version
 define('ASSET_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('ASSET_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('ASSET_MANAGER_POST_TYPE', 'asset');
-define('ASSET_MANAGER_TAXONOMY', 'asset_category');
-define('ASSET_MANAGER_META_PREFIX', '_asset_manager_');
+define('ASSET_MANAGER_POST_TYPE', 'asset'); // Existing Asset Post Type
+define('ASSET_MANAGER_TAXONOMY', 'asset_category'); // Existing Asset Taxonomy
+define('ASSET_MANAGER_META_PREFIX', '_asset_manager_'); // Existing Meta Prefix
+
+// Define constants for Repair Request module
+define('ASSET_MANAGER_REPAIR_POST_TYPE', 'repair_request'); // New Repair Request Post Type
+define('ASSET_MANAGER_REPAIR_TAXONOMY', 'repair_status'); // New Repair Status Taxonomy
+define('ASSET_MANAGER_REPAIR_META_PREFIX', '_am_repair_'); // New Meta Prefix for Repair
 
 // Include class files
 require_once ASSET_MANAGER_PLUGIN_DIR . 'includes/class-asset-manager-loader.php';
@@ -27,6 +32,12 @@ require_once ASSET_MANAGER_PLUGIN_DIR . 'includes/class-asset-manager-meta-field
 require_once ASSET_MANAGER_PLUGIN_DIR . 'includes/class-asset-manager-admin.php';
 require_once ASSET_MANAGER_PLUGIN_DIR . 'includes/class-asset-manager-callbacks.php';
 require_once ASSET_MANAGER_PLUGIN_DIR . 'includes/class-asset-manager-assets.php';
+
+// Include new class files for Repair Request module
+require_once ASSET_MANAGER_PLUGIN_DIR . 'includes/class-asset-manager-repair-post-types.php';
+require_once ASSET_MANAGER_PLUGIN_DIR . 'includes/class-asset-manager-repair-meta-fields.php';
+// Note: Repair Admin and Repair Assets handling might be integrated into existing classes
+// or require new ones depending on complexity.
 
 /**
  * Initializes the plugin.
